@@ -1,7 +1,7 @@
 TARGET=rain
 LIBS=
 CC=gcc
-CFLAGS = -W -Wall -pedantic -std=gnu11
+CFLAGS= -pedantic -Wall
 
 .PHONY: default all
 
@@ -17,7 +17,7 @@ HEADERS = $(wildcard *.h)
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Wall $(CFLAGS) $(LIBS) -o $@
+	$(CC) $(OBJECTS) $(CFLAGS) $(LIBS) -o $@
 
 clean: 
 	-rm -f *.o
