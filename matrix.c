@@ -50,8 +50,8 @@ Matrix *create(uint16_t row, uint16_t col) {
 void output(Matrix *m, char *str) {
 	for (size_t i = 0; i < m->row; ++i) {
 		for (size_t j = 0; j < m->col; ++j) {
-			char *c = (i < m->row - 1 && m->v[i+1][j] == 0) ? WHITE : GREEN;
-			printf("%s%c", c, m->v[i][j] == 0 ? ' ' : *str + rand() % strlen(str));
+			char *c = (i < (size_t)  m->row - 1 && m->v[i+1][j] == 0) ? WHITE : GREEN;
+			printf("%s%c", c, (char) (m->v[i][j] == 0 ? ' ' : *str + rand() % strlen(str)));
 			usleep(USLEEP);
 		}
 		puts("");
