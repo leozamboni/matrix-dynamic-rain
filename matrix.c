@@ -23,145 +23,145 @@
 #include <time.h>
 #include <unistd.h>
 
-
 #define GREEN "\e[0;92m"
 #define WHITE "\e[0;97m"
+#define RETURN_TO_TOP printf("\033[0;0H");
 
 typedef struct matrix Matrix;
 
 struct matrix
 {
-  uint16_t row;
-  uint16_t col;
-  uint8_t **v;
+    uint16_t row;
+    uint16_t col;
+    uint8_t **v;
 };
 
 Matrix *
 create (uint16_t row, uint16_t col)
 {
-  Matrix *m = (Matrix *)malloc (sizeof (Matrix));
-  if (!m)
-    exit (EXIT_FAILURE);
-  m->row = row;
-  m->col = col;
-  m->v = (uint8_t **)malloc (row * sizeof (uint8_t *));
-  for (size_t i = 0; i < row; ++i)
-    {
-      m->v[i] = (uint8_t *)malloc (col * sizeof (uint8_t));
-    }
-  return m;
+    Matrix *m = (Matrix *)malloc (sizeof (Matrix));
+    if (!m)
+        exit (EXIT_FAILURE);
+    m->row = row;
+    m->col = col;
+    m->v = (uint8_t **)malloc (row * sizeof (uint8_t *));
+    for (size_t i = 0; i < row; ++i)
+        {
+            m->v[i] = (uint8_t *)malloc (col * sizeof (uint8_t));
+        }
+    return m;
 }
 
 void
 output (Matrix *m, char *str)
 {
-  for (size_t i = 0; i < m->row; ++i)
-    {
-      for (size_t j = 0; j < m->col; ++j)
+    for (size_t i = 0; i < m->row; ++i)
         {
-          char *c = (i < (size_t)m->row - 1 && m->v[i + 1][j] == 0) ? WHITE
-                                                                    : GREEN;
-          printf (
-              "%s%c", c,
-              (char)(m->v[i][j] == 0 ? ' ' : *str + rand () % strlen (str)));
-          sleep (0);
+            for (size_t j = 0; j < m->col; ++j)
+                {
+                    char *c = (i < (size_t)m->row - 1 && m->v[i + 1][j] == 0) ? WHITE
+                              : GREEN;
+                    printf (
+                        "%s%c", c,
+                        (char)(m->v[i][j] == 0 ? ' ' : *str + rand () % strlen (str)));
+                    sleep (0);
+                }
+            puts ("");
         }
-      puts ("");
-    }
 }
 
-uint8_t
+_Bool
 empty (Matrix *m)
 {
-  for (size_t i = 0; i < m->row; ++i)
-    {
-      if (m->v[i][i] != 0)
-        return 1;
-    }
-  return 0;
+    for (size_t i = 0; i < m->row; ++i)
+        {
+            if (m->v[i][i] != 0)
+                return 0;
+        }
+    return 1;
 }
 
 void
 set (Matrix **m, uint16_t **head, uint16_t **end, uint16_t **size, size_t i)
 {
-  uint16_t row = (*m)->row;
-  uint16_t col = (*m)->col;
+    uint16_t row = (*m)->row;
+    uint16_t col = (*m)->col;
 
-  for (size_t j = 0; j < col; ++j)
-    {
-      for (size_t y = 0; y < row; ++y)
+    for (size_t j = 0; j < col; ++j)
         {
-          if (y == (*head)[j])
-            break;
-          if (y <= (*end)[j])
-            {
-              (*m)->v[y][j] = 0;
-              continue;
-            }
-          (*m)->v[y][j] = 1;
+            for (size_t y = 0; y < row; ++y)
+                {
+                    if (y == (*head)[j])
+                        break;
+                    if (y <= (*end)[j])
+                        {
+                            (*m)->v[y][j] = 0;
+                            continue;
+                        }
+                    (*m)->v[y][j] = 1;
+                }
+            (*head)[j]++;
         }
-      (*head)[j]++;
-    }
 
-  for (size_t j = 0; j < col; ++j)
-    {
-      if (i >= (*size)[j])
-        (*end)[j]++;
-    }
+    for (size_t j = 0; j < col; ++j)
+        {
+            if (i >= (*size)[j])
+                (*end)[j]++;
+        }
 }
 
 void
 init (Matrix **m, uint16_t **head, uint16_t **end, uint16_t **size)
 {
-  for (size_t i = 0; i < (*m)->col; ++i)
-    {
-      (*head)[i] = rand () % 10, (*size)[i] = rand () % 10, (*end)[i] = 0;
-    }
-
-  for (size_t i = 0; i < (*m)->row; ++i)
-    {
-      for (size_t j = 0; j < (*m)->col; ++j)
+    for (size_t i = 0; i < (*m)->col; ++i)
         {
-          (*m)->v[i][j] = 0;
+            (*head)[i] = rand () % 10, (*size)[i] = rand () % 10, (*end)[i] = 0;
         }
-    }
+
+    for (size_t i = 0; i < (*m)->row; ++i)
+        {
+            for (size_t j = 0; j < (*m)->col; ++j)
+                {
+                    (*m)->v[i][j] = 0;
+                }
+        }
 }
 
 int
 main (void)
 {
-  system ("clear");
-  srand (time (NULL));
+    system ("clear");
+    srand (time (NULL));
 
-  struct winsize w;
-  ioctl (0, TIOCGWINSZ, &w);
+    struct winsize w;
+    ioctl (0, TIOCGWINSZ, &w);
 
-  uint16_t row, col;
-  row = w.ws_row - 1, col = w.ws_col;
+    uint16_t row, col;
+    row = w.ws_row - 1, col = w.ws_col;
 
-  Matrix *m = create (row, col);
+    Matrix *m = create (row, col);
 
-  uint16_t *head, *end, *size;
-  head = (uint16_t *)malloc (col * sizeof (uint16_t));
-  size = (uint16_t *)malloc (col * sizeof (uint16_t));
-  end = (uint16_t *)malloc (col * sizeof (uint16_t));
+    uint16_t *head, *end, *size;
+    head = (uint16_t *)malloc (col * sizeof (uint16_t));
+    size = (uint16_t *)malloc (col * sizeof (uint16_t));
+    end = (uint16_t *)malloc (col * sizeof (uint16_t));
 
-  init (&m, &head, &end, &size);
+    init (&m, &head, &end, &size);
 
-  char *str = "<>!@#$%^&*()>?/1234567890qwertyuiopasdfghjklzxcvbnm";
+    char *str = "<>!@#$%^&*()>?/1234567890qwertyuiopasdfghjklzxcvbnm";
 
-  size_t i = 0;
-  while (1)
-    {
-      set (&m, &head, &end, &size, i++);
-      output (m, str);
-      printf ("%c[0;0f", 0x1B);
-      if (!empty (m))
+    size_t i = 0;
+    while (1)
         {
-          i = 0;
-          init (&m, &head, &end, &size);
+            set (&m, &head, &end, &size, i++);
+            output (m, str);
+            RETURN_TO_TOP
+            if (empty (m))
+                {
+                    i = 0;
+                    init (&m, &head, &end, &size);
+                }
         }
-    }
 
-  return 0;
+    return 0;
 }
