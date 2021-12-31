@@ -15,7 +15,6 @@
  *  you should have received a copy of the gnu general public license
  *  along with this program.  if not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,29 +24,37 @@
 
 #define GREEN "\e[0;92m"
 #define WHITE "\e[0;97m"
-#define RETURN_TO_TOP printf("\033[0;0H");
+#define GOTOTOP printf("\033[0;0H");
 
 typedef struct matrix Matrix;
 
 struct matrix
 {
-    uint16_t row;
-    uint16_t col;
-    uint8_t **v;
+    u_int8_t **v;
+    size_t row;
+    size_t col;
+    size_t *head;
+    size_t *end;
+    size_t *size;
 };
 
 Matrix *
-create (uint16_t row, uint16_t col)
+create (size_t row, size_t col)
 {
-    Matrix *m = (Matrix *)malloc (sizeof (Matrix));
-    if (!m)
-        exit (EXIT_FAILURE);
+    Matrix *m = malloc (sizeof (Matrix));
+    if (!m) exit (EXIT_FAILURE);
+    m->head = malloc (col * sizeof (size_t));
+    if (!m->head) exit (EXIT_FAILURE);
+    m->size = malloc (col * sizeof (size_t));
+    if (!m->size) exit (EXIT_FAILURE);
+    m->end = malloc (col * sizeof (size_t));
+    if (!m->size) exit (EXIT_FAILURE);
     m->row = row;
     m->col = col;
-    m->v = (uint8_t **)malloc (row * sizeof (uint8_t *));
+    m->v = malloc (row * sizeof (u_int8_t *));
     for (size_t i = 0; i < row; ++i)
         {
-            m->v[i] = (uint8_t *)malloc (col * sizeof (uint8_t));
+            m->v[i] = malloc (col * sizeof (u_int8_t));
         }
     return m;
 }
@@ -74,48 +81,48 @@ _Bool
 empty (Matrix *m)
 {
     for (size_t i = 0; i < m->row; ++i)
-        {
-            if (m->v[i][i] != 0)
+       {
+            if (m->v[i][i])
                 return 0;
         }
     return 1;
 }
 
 void
-set (Matrix **m, uint16_t **head, uint16_t **end, uint16_t **size, size_t i)
+set (Matrix **m, size_t i)
 {
-    uint16_t row = (*m)->row;
-    uint16_t col = (*m)->col;
+    u_int16_t row = (*m)->row;
+    u_int16_t col = (*m)->col;
 
     for (size_t j = 0; j < col; ++j)
         {
             for (size_t y = 0; y < row; ++y)
                 {
-                    if (y == (*head)[j])
+                    if (y == (*m)->head[j])
                         break;
-                    if (y <= (*end)[j])
+                    if (y <= (*m)->end[j])
                         {
                             (*m)->v[y][j] = 0;
                             continue;
                         }
                     (*m)->v[y][j] = 1;
                 }
-            (*head)[j]++;
+            (*m)->head[j]++;
         }
 
     for (size_t j = 0; j < col; ++j)
         {
-            if (i >= (*size)[j])
-                (*end)[j]++;
+            if (i >= (*m)->size[j])
+                (*m)->end[j]++;
         }
 }
 
 void
-init (Matrix **m, uint16_t **head, uint16_t **end, uint16_t **size)
+init (Matrix **m)
 {
     for (size_t i = 0; i < (*m)->col; ++i)
         {
-            (*head)[i] = rand () % 10, (*size)[i] = rand () % 10, (*end)[i] = 0;
+            (*m)->head[i] = rand () % 10, (*m)->size[i] = rand () % 10, (*m)->end[i] = 0;
         }
 
     for (size_t i = 0; i < (*m)->row; ++i)
@@ -136,30 +143,21 @@ main (void)
     struct winsize w;
     ioctl (0, TIOCGWINSZ, &w);
 
-    uint16_t row, col;
-    row = w.ws_row - 1, col = w.ws_col;
-
-    Matrix *m = create (row, col);
-
-    uint16_t *head, *end, *size;
-    head = (uint16_t *)malloc (col * sizeof (uint16_t));
-    size = (uint16_t *)malloc (col * sizeof (uint16_t));
-    end = (uint16_t *)malloc (col * sizeof (uint16_t));
-
-    init (&m, &head, &end, &size);
+    Matrix *m = create (w.ws_row - 1, w.ws_col);
+    init (&m);
 
     char *str = "<>!@#$%^&*()>?/1234567890qwertyuiopasdfghjklzxcvbnm";
 
     size_t i = 0;
     while (1)
         {
-            set (&m, &head, &end, &size, i++);
+            set (&m, i++);
             output (m, str);
-            RETURN_TO_TOP
+            GOTOTOP
             if (empty (m))
                 {
                     i = 0;
-                    init (&m, &head, &end, &size);
+                    init (&m);
                 }
         }
 
